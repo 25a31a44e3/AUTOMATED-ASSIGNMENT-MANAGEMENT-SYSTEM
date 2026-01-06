@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Automated Assignment Management System</title>
+<style>
+body {font-family: Arial,sans-serif; background:#0f172a; color:#e5e7eb; margin:0}
+header {background:linear-gradient(135deg,#020617,#1e293b); color:#f8fafc; padding:25px; text-align:center}
+nav {background:#020617; padding:12px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.6)}
+nav a, nav button{color:#e5e7eb; margin:0 12px; text-decoration:none; font-weight:bold; cursor:pointer}
+nav a:hover, nav button:hover{color:#38bdf8}
+section {display:none; padding:20px}
+section.active {display:block}
+.card {background:#020617; padding:22px; border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,.8); border:1px solid #1e293b}
+.submitted{color:lightgreen;font-weight:bold}
+.pending{color:orange;font-weight:bold}
+.overdue{color:red;font-weight:bold}
+button{background:linear-gradient(135deg,#2563eb,#38bdf8);color:#f8fafc;border:none;padding:10px 16px;border-radius:8px;cursor:pointer;font-weight:bold}
+button:hover{background:linear-gradient(135deg,#1e40af,#0ea5e9);transform:scale(1.05)}
+footer{background:#020617;color:#94a3b8;text-align:center;padding:14px;border-top:1px solid #1e293b}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px;border:1px solid #334155;text-align:center}
+#themeToggle{position:absolute; top:20px; right:20px; cursor:pointer; padding:8px; border-radius:6px; background:#1e293b; color:#f8fafc;}
+#qrCode{margin-top:20px; text-align:center;}
+#qrCode img{width:150px; height:150px;}
+</style>
+</head>
+<body>
+
+<header>
+<h1>Automated Assignment Management System</h1>
+<p>All-in-one Student & Teacher Dashboard with Analytics</p>
+<button id="themeToggle" onclick="toggleTheme()">Toggle Theme</button>
+</header>
+
+<nav>
+<a onclick="showSection('home')">Home</a>
+<a onclick="showSection('login')">Login</a>
+<a onclick="showSection('student')">Student</a>
+<a onclick="showSection('teacher')">Teacher</a>
+<a onclick="showSection('admin')">Admin</a>
+<a onclick="showSection('status')">Status</a>
+<a onclick="showSection('dashboard')">Dashboard</a>
+<a onclick="showSection('qrcode')">QR Code</a>
+<button onclick="logoutUser()">Logout</button>
+</nav>
+
+<section id="home" class="active">
+<div class="card">
+<h2>System Features</h2>
+<ul>
+<li>Multiple assignment submissions & PDF previews</li>
+<li>Overdue & status highlighting</li>
+<li>Sorting & filtering for teachers</li>
+<li>Submission reminders & alerts</li>
+<li>Dashboard with charts & analytics</li>
+<li>Role-based access control (Student/Teacher/Admin)</li>
+<li>Data export to CSV</li>
+<li>Light/Dark theme toggle</li>
+<li>Pending assignments tracking</li>
+<li>Performance history & progress tracking</li>
+<li>Display all logged students with roll numbers in teacher corner</li>
+</ul>
+</div>
+</section>
+
+<section id="login">
+<div class="card">
+<h2>Login</h2>
+<form onsubmit="loginUser(event)">
+<select id="role">
+<option value="student">Student</option>
+<option value="teacher">Teacher</option>
+<option value="admin">Admin</option>
+</select><br><br>
+<input type="text" id="username" placeholder="Username" required><br><br>
+<input type="password" id="password" placeholder="Password" required><br><br>
+<button type="submit">Login</button>
+</form>
+<p id="loginMsg"></p>
+</div>
+</section>
+
+<section id="student">
+<div class="card">
+<h2>Student Corner</h2>
+<form onsubmit="submitAssignment(event)">
+<input type="text" id="sname" placeholder="Student Name" readonly><br><br>
+<input type="text" id="roll" placeholder="Roll Number" readonly><br><br>
+<input type="text" id="atitle" placeholder="Assignment Title" required><br><br>
+<input type="date" id="duedate" required><br><br>
+<input type="file" id="pdf" accept="application/pdf" required><br><br>
+<button type="submit">Submit Assignment</button>
+</form>
+</div>
+</section>
+
+<section id="teacher">
+<div class="card">
+<h2>Teacher Corner</h2>
+<p>Marks, PDF Review & Student Filtering</p>
+Filter by: <input type="text" id="filterStudent" placeholder="Student name" oninput="loadTeacherView()">
+<table id="teacherTable">
+<tr><th>Student</th><th>Roll Number</th><th>Assignment</th><th>PDF</th><th>Marks</th><th>Grade</th><th>Status</th></tr>
+</table>
+</div>
+</section>
+
+<section id="admin">
+<div class="card">
+<h2>Admin Panel</h2>
+<button onclick="exportCSV()">Export Assignments CSV</button>
+<p>Full system control: manage students, assignments, and analytics.</p>
+</div>
+</section>
+
+<section id="status">
+<div class="card">
+<h2>Assignment Status</h2>
+<table id="statusTable">
+<tr><th>Student</th><th>Assignment</th><th>Due</th><th>Status</th><th>Saved</th><th>Marks</th><th>PDF</th><th>Action</th></tr>
+</table>
+</div>
+</section>
+
+<section id="dashboard">
+<div class="card">
+<h2>Dashboard Analytics</h2>
+<div id="dashboardContent"></div>
+<canvas id="chart" width="400" height="200"></canvas>
+</div>
+</section>
+
+<section id="qrcode">
+<div class="card">
+<h2>Access This Project via QR Code</h2>
+<p>Scan the QR code below to open this project on another device:</p>
+<div id="qrCode"><img id="qrImg" src="" alt="QR Code"></div>
+</div>
+</section>
+
+<footer>
+<p>&copy; 2026 Automated Assignment Management System</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<script>
+// Dynamic student list (no hardcoded names)
+let loggedStudents = JSON.parse(localStorage.getItem('students')) || [];
+let currentStudent = null;
+
+let isDark=true;
+function toggleTheme(){
+  document.body.style.background=isDark?'#f8fafc':'#0f172a';
+  document.body.style.color=isDark?'#0f172a':'#e5e7eb';
+  isDark=!isDark;
+}
+
+function showSection(id){
+ document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
+ const el=document.getElementById(id); if(el) el.classList.add('active');
+ if(id==='dashboard') renderChart();
+}
+
+function loginUser(e){
+ e.preventDefault();
+ const role=document.getElementById('role').value;
+ const username=document.getElementById('username').value.trim();
+ localStorage.setItem('currentRole',role);
+
+ // If student logs in, register student dynamically
+ if(role==='student'){
+   let students = JSON.parse(localStorage.getItem('students')) || [];
+   let student = students.find(s=>s.name===username);
+   if(!student){
+     student = {name:username, roll:'R'+(students.length+1)};
+     students.push(student);
+     localStorage.setItem('students',JSON.stringify(students));
+   }
+   loggedStudents = students;
+   currentStudent = student;
+   document.getElementById('sname').value = student.name;
+   document.getElementById('roll').value = student.roll;
+ }
+ document.getElementById('loginMsg').innerText=role+' logged in';
+}
+
+function submitAssignment(e){
+ e.preventDefault();
+ if(!currentStudent){ alert('Please login as student first'); return; }
+ const data=JSON.parse(localStorage.getItem('assignments'))||[];
+ const pdfFile=document.getElementById('pdf').files[0];
+ 
+ // check if student already submitted
+ const existingIndex = data.findIndex(a=>a.roll===currentStudent.roll);
+ const assignmentData = {
+   name: currentStudent.name,
+   roll: currentStudent.roll,
+   title: atitle.value,
+   due: duedate.value,
+   saved: new Date().toLocaleDateString(),
+   status: 'Submitted',
+   marks: existingIndex>-1 ? data[existingIndex].marks : '',
+   pdf: pdfFile.name
+ };
+ 
+ if(existingIndex>-1){
+   data[existingIndex] = assignmentData;
+ } else {
+   data.push(assignmentData);
+ }
+ 
+ localStorage.setItem('assignments',JSON.stringify(data));
+ loadAssignments();
+ loadTeacherView();
+ e.target.reset();
+ alert('Assignment submitted successfully!');
+}
+
+function loadAssignments(){
+ const table=document.getElementById('statusTable');
+ table.innerHTML=`<tr><th>Student</th><th>Assignment</th><th>Due</th><th>Status</th><th>Saved</th><th>Marks</th><th>PDF</th><th>Action</th></tr>`;
+ const data=JSON.parse(localStorage.getItem('assignments'))||[];
+ const today=new Date().toISOString().split('T')[0];
+ loggedStudents.forEach(s=>{
+   const submission=data.find(a=>a.roll===s.roll);
+   const r=table.insertRow();
+   r.insertCell().innerText=s.name;
+   r.insertCell().innerText=submission?submission.title:'--';
+   r.insertCell().innerText=submission?submission.due:'--';
+   r.insertCell().innerHTML=`<span class='${submission? (submission.due<today?'overdue':'submitted'):'pending'}'>${submission?submission.status:'Pending'}</span>`;
+   r.insertCell().innerText=submission?submission.saved:'--';
+   r.insertCell().innerText=submission?submission.marks:'--';
+   r.insertCell().innerHTML=submission?`<a href='${submission.pdf}' download>Download</a>`:'--';
+   r.insertCell().innerHTML='--';
+ });
+}
+
+function loadTeacherView(){
+ const t=document.getElementById('teacherTable');
+ const filter=document.getElementById('filterStudent').value.toLowerCase();
+ t.innerHTML=`<tr><th>Student</th><th>Roll Number</th><th>Assignment</th><th>PDF</th><th>Marks</th><th>Grade</th><th>Status</th></tr>`;
+ const data=JSON.parse(localStorage.getItem('assignments'))||[];
+ loggedStudents.forEach(s=>{
+   if(filter && !s.name.toLowerCase().includes(filter)) return;
+   const submission=data.find(a=>a.roll===s.roll);
+   const r=t.insertRow();
+   r.insertCell().innerText=s.name;
+   r.insertCell().innerText=s.roll;
+   r.insertCell().innerText=submission?submission.title:'--';
+   r.insertCell().innerHTML=submission?`<a href='${submission.pdf}' download>Download</a>`:'--';
+   r.insertCell().innerHTML=submission?`<input type='number' value='${submission.marks}' onchange='saveMarks(${data.indexOf(submission)},this.value)'>`:'--';
+   const grade=submission? (submission.marks>=90?'A+':submission.marks>=75?'A':submission.marks>=60?'B':submission.marks>=50?'C':'F'):'--';
+   r.insertCell().innerText=grade;
+   r.insertCell().innerText=submission?submission.status:'Pending';
+ });
+}
+
+function saveMarks(i,m){ const d=JSON.parse(localStorage.getItem('assignments')); d[i].marks=m; localStorage.setItem('assignments',JSON.stringify(d)); loadAssignments(); loadTeacherView();}
+function logoutUser(){ localStorage.clear(); location.reload();}
+function exportCSV(){
+ const data=JSON.parse(localStorage.getItem('assignments'))||[];
+ let csv='Student,Roll,Assignment,Due,Saved,Status,Marks,PDF\n';
+ loggedStudents.forEach(s=>{
+   const submission=data.find(a=>a.roll===s.roll);
+   csv+=`${s.name},${s.roll},${submission?submission.title:'--'},${submission?submission.due:'--'},${submission?submission.saved:'--'},${submission?submission.status:'Pending'},${submission?submission.marks:'--'},${submission?submission.pdf:'--'}\n`;
+ });
+ const blob=new Blob([csv],{type:'text/csv'});
+ const link=document.createElement('a');
+ link.href=URL.createObjectURL(blob);
+ link.download='assignments.csv';
+ link.click();
+}
+
+function loadDashboard(){
+ const data=JSON.parse(localStorage.getItem('assignments'))||[];
+ const total=data.length;
+ const graded=data.filter(a=>a.marks!=='').length;
+ const avgMarks=graded?Math.round(data.filter(a=>a.marks!=='').reduce((sum,a)=>sum+Number(a.marks),0)/graded):0;
+ document.getElementById('dashboardContent').innerHTML=`Total Assignments: ${total}<br>Graded: ${graded}<br>Average Marks: ${avgMarks}`;
+}
+
+function renderChart(){
+ const ctx=document.getElementById('chart').getContext('2d');
+ const data=JSON.parse(localStorage.getItem('assignments'))||[];
+ const labels=loggedStudents.map(s=>s.name);
+ const submitted=labels.map((_,i)=>data.find(a=>a.roll===loggedStudents[i].roll)?1:0);
+ if(window.assignmentChart) window.assignmentChart.destroy();
+ window.assignmentChart=new Chart(ctx,{type:'bar',data:{labels, datasets:[{label:'Assignments Submitted',data:submitted,backgroundColor:'rgba(54, 162, 235, 0.7)'}]},options:{scales:{y:{beginAtZero:true}}}});
+}
+
+const projectURL = window.location.href;
+QRCode.toDataURL(projectURL, { width: 150, margin: 2 }, function (err, url) {
+  if (!err) document.getElementById('qrImg').src = url;
+});
+
+window.onload=function(){
+ loggedStudents = JSON.parse(localStorage.getItem('students')) || [];
+ loadAssignments();
+ loadTeacherView();
+ loadDashboard();
+};
+</script>
+</body>
+</html>
